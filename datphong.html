@@ -64,17 +64,13 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2f0XUkNBGNw17bAvf7-QVyvnUIAy6bJFwjXoaxp_-BbQPN9PTgbFWnnpOY2aSIkZ1uQ/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2_-Zv9CM9fTjrOUnxjDIU-WXhFM0JidretvA7Mc7Yog3or_h41FwOgKOfx3ykNoQNSQ/exec";
     let danhSachDatPhong = [];
 
     async function taiDanhSach() {
-      try {
-        const res = await fetch(SCRIPT_URL);
-        danhSachDatPhong = await res.json();
-        capNhatBang();
-      } catch (err) {
-        console.error("Lỗi khi tải danh sách:", err);
-      }
+      const res = await fetch(SCRIPT_URL);
+      danhSachDatPhong = await res.json();
+      capNhatBang();
     }
 
     function chongTrungLich(phong, ngay, tu, den) {
@@ -110,21 +106,13 @@
         return;
       }
 
-      try {
-        await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ ten, phong, ngay, tuGio: tu, denGio: den })
-        });
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ ten, phong, ngay, tuGio: tu, denGio: den })
+      });
 
-        thongBao.textContent = "Đặt phòng thành công!";
-        await taiDanhSach();
-      } catch (err) {
-        thongBao.textContent = "Đã xảy ra lỗi khi gửi dữ liệu.";
-        console.error("Lỗi gửi dữ liệu:", err);
-      }
+      thongBao.textContent = "Đặt phòng thành công!";
+      await taiDanhSach();
     }
 
     function capNhatBang() {
