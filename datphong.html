@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Ứng dụng Đặt Phòng Họp</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, select, button { margin-top: 5px; padding: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .section { margin-bottom: 30px; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+  <h1>Ứng dụng Đặt Phòng Họp</h1>
+
+  <div class="section">
+    <h2>1. Đặt Phòng Họp</h2>
+    <label>Tên người đặt: <input type="text" id="tenNguoiDat"></label>
+    <label>Phòng họp:
+      <select id="phongHop">
+        <option>Phòng 1</option>
+        <option>Phòng 2</option>
+        <option>Phòng 3</option>
+        <option>Phòng 4</option>
+      </select>
+    </label>
+    <label>Ngày: <input type="date" id="ngayDat"></label>
+    <label>Từ giờ: <input type="time" id="tuGio" min="08:00" max="17:30"></label>
+    <label>Đến giờ: <input type="time" id="denGio" min="08:00" max="17:30"></label>
+    <button onclick="datPhong()">Đặt phòng</button>
+    <p id="thongBao"></p>
+  </div>
+
+  <div class="section">
+    <h2>2. Danh Sách Đặt Phòng</h2>
+    <table id="bangDanhSach">
+      <thead>
+        <tr>
+          <th>STT</th><th>Phòng</th><th>Thời gian</th><th>Tên người đặt</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>3. Tìm Kiếm Phòng Họp Trống</h2>
+    <label>Phòng họp:
+      <select id="phongTimKiem">
+        <option>Phòng 1</option>
+        <option>Phòng 2</option>
+        <option>Phòng 3</option>
+        <option>Phòng 4</option>
+      </select>
+    </label>
+    <label>Ngày: <input type="date" id="ngayTimKiem"></label>
+    <label>Từ giờ: <input type="time" id="tuGioTimKiem"></label>
+    <label>Đến giờ: <input type="time" id="denGioTimKiem"></label>
+    <button onclick="traCuuPhong()">Tra cứu</button>
+    <p id="ketQuaTraCuu"></p>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2f0XUkNBGNw17bAvf7-QVyvnUIAy6bJFwjXoaxp_-BbQPN9PTgbFWnnpOY2aSIkZ1uQ/exec";
+    let danhSachDatPhong = [];
+
+    async function taiDanhSach() {
+      const res = await fetch(SCRIPT_URL);
+      danhSachDatPhong = await res.json();
+      capNhatBang();
+    }
+
+    function chongTrungLich(phong, ngay, tu, den) {
+      return danhSachDatPhong.find(p =>
+        p.phong === phong && p.ngay === ngay &&
+        !(den <= p.tu || tu >= p.den)
+      );
+    }
+
+    async function datPhong() {
+      const ten = document.getElementById("tenNguoiDat").value;
+      const phong = document.getElementById("phongHop").value;
+      const ngay = document.getElementById("ngayDat").value;
+      const tu = document.getElementById("tuGio").value;
+      const den = document.getElementById("denGio").value;
+      const thongBao = document.getElementById("thongBao");
+
+      if (!ten || !ngay || !tu || !den) {
+        thongBao.textContent = "Vui lòng điền đầy đủ thông tin.";
+        return;
+      }
+
+      if (den <= tu) {
+        thongBao.textContent = "Thời gian không hợp lệ.";
+        return;
+      }
+
+      await taiDanhSach();
+      const trung = chongTrungLich(phong, ngay, tu, den);
+
+      if (trung) {
+        thongBao.textContent = `Phòng này thời gian này đã có ${trung.ten} đặt, vui lòng chọn khoảng thời gian khác.`;
+        return;
+      }
+
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ ten, phong, ngay, tuGio: tu, denGio: den })
+      });
+
+      thongBao.textContent = "Đặt phòng thành công!";
+      await taiDanhSach();
+    }
+
+    function capNhatBang() {
+      const tbody = document.querySelector("#bangDanhSach tbody");
+      tbody.innerHTML = "";
+      danhSachDatPhong.forEach((p, i) => {
+        const row = `<tr>
+          <td>${i + 1}</td>
+          <td>${p.phong}</td>
+          <td>${p.ngay} ${p.tu} - ${p.den}</td>
+          <td>${p.ten}</td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    function traCuuPhong() {
+      const phong = document.getElementById("phongTimKiem").value;
+      const ngay = document.getElementById("ngayTimKiem").value;
+      const tu = document.getElementById("tuGioTimKiem").value;
+      const den = document.getElementById("denGioTimKiem").value;
+      const ketQua = document.getElementById("ketQuaTraCuu");
+
+      if (!ngay || !tu || !den) {
+        ketQua.textContent = "Vui lòng nhập đủ thông tin tra cứu.";
+        return;
+      }
+
+      const trung = chongTrungLich(phong, ngay, tu, den);
+
+      if (trung) {
+        ketQua.textContent = `Phòng ${phong} đã được đặt bởi ${trung.ten} trong khoảng này.`;
+      } else {
+        ketQua.textContent = `Phòng ${phong} còn trống trong khoảng thời gian này.`;
+      }
+    }
+
+    window.onload = taiDanhSach;
+  </script>
+</body>
+</html>
