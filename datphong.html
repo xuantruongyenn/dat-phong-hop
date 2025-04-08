@@ -68,9 +68,13 @@
     let danhSachDatPhong = [];
 
     async function taiDanhSach() {
-      const res = await fetch(SCRIPT_URL);
-      danhSachDatPhong = await res.json();
-      capNhatBang();
+      try {
+        const res = await fetch(SCRIPT_URL);
+        danhSachDatPhong = await res.json();
+        capNhatBang();
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách:", err);
+      }
     }
 
     function chongTrungLich(phong, ngay, tu, den) {
@@ -106,13 +110,21 @@
         return;
       }
 
-      await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ ten, phong, ngay, tuGio: tu, denGio: den })
-      });
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ ten, phong, ngay, tuGio: tu, denGio: den })
+        });
 
-      thongBao.textContent = "Đặt phòng thành công!";
-      await taiDanhSach();
+        thongBao.textContent = "Đặt phòng thành công!";
+        await taiDanhSach();
+      } catch (err) {
+        thongBao.textContent = "Đã xảy ra lỗi khi gửi dữ liệu.";
+        console.error("Lỗi gửi dữ liệu:", err);
+      }
     }
 
     function capNhatBang() {
